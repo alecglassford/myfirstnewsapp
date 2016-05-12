@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.css" />
+        <script src="//cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.js"></script>
+    </head>
+    <body>
+        <h1>Seattle 911 calls on May 11</h1>
+        <h2>(before ~10pm)</h2>
+        <div id="map" style="width:100%; height:300px;"></div>
+        <table border=1 cellpadding=7 style="margin:0 auto">
+            <tr>
+                <th>Time</th>
+                <th>Type</th>
+                <th>Address</th>
+                <th>Latitude</th>
+                <th>Longitude</th>
+            </tr>
+            {% for row in object_list %}
+            <tr>
+                <td><a href="{{ loop.index0 }}">{{ row['Time'] }}</a></td>
+                <td>{{ row['Type'] }}</td>
+                <td>{{ row['Address'] }}</td>
+                <td>{{ row['Latitude'] }}</td>
+                <td>{{ row['Longitude'] }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        <script type="text/javascript">
+           var map = L.map('map').setView([47.63, -122.32], 11);
+           var mapquestLayer = new L.TileLayer('http://{s}.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.png', {
+               maxZoom: 18,
+               attribution: 'Data, imagery and map information provided by <a href="http://open.mapquest.co.uk" target="_blank">MapQuest</a>,<a href="http://www.openstreetmap.org/" target="_blank">OpenStreetMap</a> and contributors.',
+               subdomains: ['otile1','otile2','otile3','otile4']
+           });
+           map.addLayer(mapquestLayer);
+           var data = {
+              "type": "FeatureCollection",
+              "features": [
+                {% for obj in object_list %}
+                {
+                  "type": "Feature",
+                  "properties": {
+                    "full_name": "{{ obj['Type']}} {{ obj['Address']}} {{ obj['Time'] }}",
+                    "id": "{{ loop.index0 }}"
+                  },
+                  "geometry": {
+                    "type": "Point",
+                    "coordinates": [{{ obj['Longitude'] }}, {{ obj['Latitude'] }}]
+                  }
+                }{% if not loop.last %},{% endif %}
+                {% endfor %}
+              ]
+            };
+            var dataLayer = L.geoJson(data, {
+                onEachFeature: function(feature, layer) {
+                    layer.bindPopup(
+                        '<a href="' + feature.properties.id + '/">' +
+                            feature.properties.full_name +
+                        '</a>'
+                    );
+                }
+            });
+            map.addLayer(dataLayer);
+       </script>
+    </body>
+</html>
